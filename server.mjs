@@ -171,7 +171,10 @@ function searchPeople(records, q) {
 export async function handleRequest(req, res) {
   if (req.method === "OPTIONS") return json(res, 204, {});
   const url = new URL(req.url || "/", `http://127.0.0.1:${PORT}`);
-  const path = url.pathname.replace(/\/$/, "") || "/";
+  let path = url.pathname.replace(/\/$/, "") || "/";
+  while (path === "/api" || path.startsWith("/api/")) {
+    path = path === "/api" ? "/" : path.slice(4) || "/";
+  }
   const ip = clientIp(req);
 
   try {
