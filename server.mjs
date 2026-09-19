@@ -168,7 +168,7 @@ function searchPeople(records, q) {
     }));
 }
 
-const server = createServer(async (req, res) => {
+export async function handleRequest(req, res) {
   if (req.method === "OPTIONS") return json(res, 204, {});
   const url = new URL(req.url || "/", `http://127.0.0.1:${PORT}`);
   const path = url.pathname.replace(/\/$/, "") || "/";
@@ -977,8 +977,12 @@ const server = createServer(async (req, res) => {
   } catch (error) {
     return deny(res, 500, "SERVER_ERROR", error instanceof Error ? error.message : "Desk closed.");
   }
-});
+}
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log("Names of Note API on :" + PORT);
-});
+const server = createServer(handleRequest);
+
+if (!process.env.VERCEL) {
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log("Names of Note API on :" + PORT);
+  });
+}
