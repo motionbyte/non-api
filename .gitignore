@@ -1,0 +1,15 @@
+# dependencies
+node_modules
+
+# env
+.env
+.env.local
+!.env.example
+
+# live data
+data/db.json
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
