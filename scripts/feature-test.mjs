@@ -106,6 +106,13 @@ async function run() {
   ok("file a page", Boolean(filed.json?.slug), filed.json?.error);
   const slug = filed.json?.slug;
 
+  const thin = await req("/v1/file", {
+    method: "POST",
+    headers: auth,
+    body: JSON.stringify({ name: `Thin Name ${stamp}`, headline: "X", category: "science" }),
+  });
+  ok("thin filing blocked", thin.res.status === 400 && thin.json?.code === "PAGE_TOO_THIN", thin.json?.code);
+
   const dup = await req("/v1/file", {
     method: "POST",
     headers: auth,
@@ -313,10 +320,22 @@ async function run() {
   );
 
   const robots = await html("/robots.txt");
-  ok("robots disallow private", robots.text.includes("Disallow: /desk") && robots.text.includes("Disallow: /moderation"));
+  ok(
+    "robots disallow private",
+    robots.text.includes("Disallow: /desk") && robots.text.includes("Disallow: /moderation") && robots.text.includes("Disallow: /search"),
+  );
+
+  const wiki = await html("/about/wikipedia");
+  ok("wikipedia comparison", wiki.res.status === 200 && wiki.text.includes("Wikipedia") && wiki.text.includes("not for sale"));
 
   const sitemap = await html("/sitemap.xml");
-  ok("sitemap xml", sitemap.res.status === 200 && sitemap.text.includes("/directory"));
+  ok(
+    "sitemap xml",
+    sitemap.res.status === 200 && sitemap.text.includes("/directory") && sitemap.text.includes("/about/wikipedia") && sitemap.text.includes("/categories/technology"),
+  );
+
+  const indexNowKey = await html("/c4e8f1a29b6d47c0a3158e7d2f90b4c6.txt");
+  ok("indexnow key", indexNowKey.res.status === 200 && indexNowKey.text.includes("c4e8f1a29b6d47c0a3158e7d2f90b4c6"));
 
   const missing = await html("/people/this-name-does-not-exist");
   ok("article 404", missing.res.status === 404 && missing.text.includes("not filed"));

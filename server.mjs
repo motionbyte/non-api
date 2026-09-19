@@ -17,8 +17,10 @@ import {
   matchesQuery,
   sortOrganic,
   similarRecords,
+  filingTooThin,
 } from "./lib/copy.mjs";
 import { load, save, uniqueUsername, audit, notify, notifyWatchers, activeBlock, settings } from "./lib/store.mjs";
+import { announcePage } from "./lib/indexnow.mjs";
 
 const scryptAsync = promisify(scrypt);
 const PORT = Number(process.env.PORT || 4010);
@@ -578,6 +580,7 @@ export async function handleRequest(req, res) {
       if (matches[0]?.slug === slugify(body.name) && !body.confirmDuplicate) {
         return json(res, 409, { error: "A similar page already exists.", code: "POSSIBLE_DUPLICATE", matches });
       }
+      if (filingTooThin(body)) return deny(res, 400, "PAGE_TOO_THIN", "Write who they are — a public lead, not just a name.");
       const pending = settings(db).newUserReview && !canDirectPublish(user);
       const record = draftRecord(db.records, body, {
         sku: "free",
@@ -598,6 +601,7 @@ export async function handleRequest(req, res) {
       record.currentRevisionId = revision.id;
       audit(db, { actorId: user.id, action: "ARTICLE_CREATED", targetType: "article", targetId: record.slug, ip });
       await save(db);
+      announcePage(record.slug);
       return json(res, 200, { slug: record.slug, matches });
     }
 
@@ -755,6 +759,7 @@ export async function handleRequest(req, res) {
       let record = createdByUser(db, user);
       if (!record) {
         if (!text(body.name, 80)) return deny(res, 400, "INVALID_INPUT", "Incomplete filing.");
+        if (filingTooThin(body)) return deny(res, 400, "PAGE_TOO_THIN", "Write who they are — a public lead, not just a name.");
         record = draftRecord(db.records, body, { sku: sku.id, status: "pending", lane: "filed", createdBy: user.id, ownerUserId: user.id, email: user.email });
         db.records.unshift(record);
       } else {
@@ -786,6 +791,7 @@ export async function handleRequest(req, res) {
         });
         await save(db);
       }
+      announcePage(record.slug);
       return json(res, 200, { slug: record.slug });
     }
 
@@ -870,6 +876,7 @@ export async function handleRequest(req, res) {
           audit(db, { actorId: user.id, action: "EDIT_REJECTED", targetType: "revision", targetId: revision.id, ip });
         }
         await save(db);
+        if (action === "approve-edit") announcePage(record.slug);
         return json(res, 200, { ok: true, slug: record.slug });
       }
       const record = recordBySlug(db, slugify(body.slug));
@@ -961,6 +968,7 @@ export async function handleRequest(req, res) {
       }
       record.updatedAt = now();
       await save(db);
+      if (record.status === "published") announcePage(record.slug);
       return json(res, 200, { slug: record.slug, record: publicRecord(record) });
     }
 
