@@ -1,1 +1,1 @@
-export { handleRequest as default } from "../server.mjs";
+export { default } from "../server.mjs";

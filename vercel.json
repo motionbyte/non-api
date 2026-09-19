@@ -4,7 +4,7 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 30,
-      "includeFiles": "{../lib/**,../server.mjs,../data/**}"
+      "includeFiles": "{lib/**,server.mjs,data/**}"
     }
   }
 }

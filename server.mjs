@@ -979,6 +979,8 @@ export async function handleRequest(req, res) {
   }
 }
 
+export default handleRequest;
+
 const server = createServer(handleRequest);
 
 if (!process.env.VERCEL) {
